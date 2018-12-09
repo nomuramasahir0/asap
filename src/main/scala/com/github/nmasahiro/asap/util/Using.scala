@@ -1,4 +1,4 @@
-package com.github.nmasahiro.util
+package com.github.nmasahiro.asap.util
 
 import java.io.PrintWriter
 

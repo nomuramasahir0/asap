@@ -2,8 +2,8 @@ package com.github.nmasahiro.asap.algorithm.cmaes
 
 import breeze.linalg._
 import breeze.numerics.{log, pow, sqrt}
-import breeze.stats
 import breeze.linalg.eigSym.EigSym
+import breeze.stats.distributions
 import com.github.nmasahiro.asap.algorithm.{Population, Strategy}
 
 
@@ -45,7 +45,7 @@ class CMAES private [cmaes] (iteration: Int,
     case CMAWeightActive() => CMAWeightActive.getWeight(mu, lambda, dim, c1, cmu)
   }
 
-  private val g = stats.distributions.Gaussian(0, 1)
+  private val g = distributions.Gaussian(0, 1)
 
   def sampling: Population = {
     // Z: dim x lambda
@@ -59,13 +59,13 @@ class CMAES private [cmaes] (iteration: Int,
     Population(Z, Y, X)
   }
 
-  def sorted(s: Population, fvals: DenseVector[Double]): Population = {
+  def sorted(pop: Population, fvals: DenseVector[Double]): Population = {
     val argFvals = argsort(fvals)
 
     def sort(m: DenseMatrix[Double]): DenseMatrix[Double] =
       DenseMatrix((0 until lambda).map(i => m(::, argFvals(i)).toArray): _*).t
 
-    Population(sort(s.Z), sort(s.Y), sort(s.X))
+    Population(sort(pop.Z), sort(pop.Y), sort(pop.X))
   }
 
   def update(pop: Population): CMAES = {

@@ -1,27 +1,27 @@
 package com.github.nmasahiro.asap.algorithm.cmaes
 
 import breeze.linalg._
-import breeze.numerics.{log, pow, sqrt}
+import breeze.numerics.{pow, sqrt}
 import breeze.linalg.eigSym.EigSym
 import breeze.stats.distributions
 import com.github.nmasahiro.asap.algorithm.{Population, Strategy}
 
 
-class CMAES private [cmaes] (iteration: Int,
-                             lambda: Int,
-                             dim: Int,
-                             ps: DenseVector[Double],
-                             pc: DenseVector[Double],
-                             B: DenseMatrix[Double],
-                             C: DenseMatrix[Double],
-                             D: DenseVector[Double],
-                             sigma: Double,
-                             mean: DenseVector[Double],
-                             weightType: CMAWeightType) extends Strategy {
+class CMAES private[cmaes](iteration: Int,
+                           lambda: Int,
+                           dim: Int,
+                           ps: DenseVector[Double],
+                           pc: DenseVector[Double],
+                           B: DenseMatrix[Double],
+                           C: DenseMatrix[Double],
+                           D: DenseVector[Double],
+                           sigma: Double,
+                           mean: DenseVector[Double],
+                           weightType: CMAWeightType) extends Strategy {
 
   override def getLambda: Int = lambda
 
-  private val mu = math.floor(lambda/2.toDouble).toInt
+  private val mu = math.floor(lambda / 2.toDouble).toInt
 
   private val mueff = weightType match {
     case CMAWeightNormal() => CMAWeightNormal.getMueff(mu, lambda)
@@ -59,16 +59,17 @@ class CMAES private [cmaes] (iteration: Int,
     Population(Z, Y, X)
   }
 
-  def sorted(pop: Population, fvals: DenseVector[Double]): Population = {
+  def sorted(pop: Population, fvals: DenseVector[Double]): (Population, DenseVector[Double]) = {
     val argFvals = argsort(fvals)
 
     def sort(m: DenseMatrix[Double]): DenseMatrix[Double] =
       DenseMatrix((0 until lambda).map(i => m(::, argFvals(i)).toArray): _*).t
 
-    Population(sort(pop.Z), sort(pop.Y), sort(pop.X))
+    (Population(sort(pop.Z), sort(pop.Y), sort(pop.X)),
+      DenseVector(fvals.toArray.sorted))
   }
 
-  def update(pop: Population): CMAES = {
+  def update(pop: Population, fvals: DenseVector[Double]): CMAES = {
 
     val weightsDiag = diag(DenseVector(weights.toArray))
     val wYMatrix = pop.Y(::, 0 until mu) * weightsDiag(0 until mu, 0 until mu)
@@ -76,14 +77,14 @@ class CMAES private [cmaes] (iteration: Int,
 
     val meanN = mean + wY *:* sigma
 
-    val invSqrtC = B * diag(D ^:^(-1.0)) * B.t
+    val invSqrtC = B * diag(D ^:^ (-1.0)) * B.t
 
     val psN: DenseVector[Double] = (1.0 - csig) * ps + sqrt(csig * (2.0 - csig) * mueff) * invSqrtC * wY
 
     val sigmaN = sigma * math.exp((csig / damps) * ((norm(psN) / chiN) - 1.0))
 
     val hsig =
-      if (norm(psN) / math.sqrt(pow(1.0 - ( 1.0 - csig), 2.0 * iteration / lambda)) / chiN < 1.4 + 2.0/(dim + 1.0)) 1.0
+      if (norm(psN) / math.sqrt(pow(1.0 - (1.0 - csig), 2.0 * iteration / lambda)) / chiN < 1.4 + 2.0 / (dim + 1.0)) 1.0
       else 0.0
 
     val pcN: DenseVector[Double] = (1.0 - cc) * pc + hsig * sqrt(cc * (2.0 - cc) * mueff) * wY
@@ -94,9 +95,9 @@ class CMAES private [cmaes] (iteration: Int,
     }
 
     val nC: DenseMatrix[Double] = (1 + c1 * hsig - c1 - cmu * sum(weights)) * C
-      + cmu * (0 until lambda).map { i =>
-        weightsRankMu(i) * pop.Y(::, i) * pop.Y(::, i).t
-      }.foldLeft(DenseMatrix.zeros[Double](dim, dim))(_ + _)
+    +cmu * (0 until lambda).map { i =>
+      weightsRankMu(i) * pop.Y(::, i) * pop.Y(::, i).t
+    }.foldLeft(DenseMatrix.zeros[Double](dim, dim))(_ + _)
 
     val EigSym(nDSqrt, nB) = eigSym(nC)
 

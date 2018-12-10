@@ -18,12 +18,12 @@ case class StrategyDriver(private val f: PartialFunction[DenseMatrix[Double], De
 
       val newEvalCnt = evalCnt + strategy.getLambda
 
-      val sortedPop = strategy.sorted(pop, fvals)
+      val (sortedPop, sortedFvals) = strategy.sorted(pop, fvals)
 
       if (stopCondition(newEvalCnt, min(fvals))) {
         (newEvalCnt, sortedPop.X(*, 0).underlying)
       } else {
-        optimize(strategy.update(sortedPop), newEvalCnt)
+        optimize(strategy.update(sortedPop, sortedFvals), newEvalCnt)
       }
     }
     optimize(strategy, 0)

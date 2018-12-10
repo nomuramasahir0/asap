@@ -60,16 +60,17 @@ class DXNES private[dxnes](iteration: Int,
     Population(Z, Y, X)
   }
 
-  def sorted(pop: Population, fvals: DenseVector[Double]): Population = {
+  def sorted(pop: Population, fvals: DenseVector[Double]): (Population, DenseVector[Double]) = {
     val argFvals = argsort(fvals)
 
     def sort(m: DenseMatrix[Double]): DenseMatrix[Double] =
       DenseMatrix((0 until lambda).map(i => m(::, argFvals(i)).toArray): _*).t
 
-    Population(sort(pop.Z), sort(pop.Y), sort(pop.X))
+    (Population(sort(pop.Z), sort(pop.Y), sort(pop.X)),
+      DenseVector(fvals.toArray.sorted))
   }
 
-  def update(pop: Population): DXNES = {
+  def update(pop: Population, fvals: DenseVector[Double]): DXNES = {
 
     val wRankZMatrix = pop.Z * diag(weightsRank)
     val wRankZ = sum(wRankZMatrix(*, ::))

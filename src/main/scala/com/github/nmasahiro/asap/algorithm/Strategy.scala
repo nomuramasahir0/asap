@@ -13,7 +13,7 @@ trait Strategy {
 
   def sorted(pop: Population, fvals: DenseVector[Double]): Population
 
-  def update(pop: Population): Strategy
+  def update(pop: Population, fvals: DenseVector[Double]): Strategy
 
 }
 

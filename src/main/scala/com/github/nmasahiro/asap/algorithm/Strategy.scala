@@ -11,7 +11,7 @@ trait Strategy {
 
   def sampling: Population
 
-  def sorted(pop: Population, fvals: DenseVector[Double]): Population
+  def sorted(pop: Population, fvals: DenseVector[Double]): (Population, DenseVector[Double])
 
   def update(pop: Population, fvals: DenseVector[Double]): Strategy
 

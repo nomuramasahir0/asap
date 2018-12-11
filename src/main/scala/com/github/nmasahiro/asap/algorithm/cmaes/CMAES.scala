@@ -30,11 +30,11 @@ class CMAES private[cmaes](iteration: Int,
 
   private val csig = (mueff + 2) / (dim + mueff + 5)
 
-  private val cc = (4 + mueff / dim) / (dim + 4 + 2 * mueff / dim)
+  private val cc = (4.0 + mueff / dim) / (dim + 4.0 + 2.0 * mueff / dim)
 
-  private val c1 = 2 / (math.pow(dim + 1.3, 2) + mueff)
+  private val c1 = 2.0 / (math.pow(dim + 1.3, 2.0) + mueff)
 
-  private val cmu = min(1 - c1, 2 * (mueff - 2 + 1 / mueff) / (math.pow(dim + 2, 2) + mueff))
+  private val cmu = min(1.0 - c1, 2.0 * (mueff - 2.0 + 1.0 / mueff) / (math.pow(dim + 2, 2) + mueff))
 
   private val chiN = math.sqrt(dim) * (1.0 - 1.0 / (4.0 * dim) + 1.0 / (21.0 * dim * dim))
 
@@ -84,8 +84,9 @@ class CMAES private[cmaes](iteration: Int,
     val sigmaN = sigma * math.exp((csig / damps) * ((norm(psN) / chiN) - 1.0))
 
     val hsig =
-      if (norm(psN) / math.sqrt(pow(1.0 - (1.0 - csig), 2.0 * iteration / lambda)) / chiN < 1.4 + 2.0 / (dim + 1.0)) 1.0
+      if (norm(psN) / math.sqrt(1 - pow(1.0 - (1.0 - csig), 2.0 * (iteration + 1))) / chiN < 1.4 + 2.0 / (dim + 1.0)) 1.0
       else 0.0
+    val deltaHsig = (1.0 - hsig) * cc * (2.0 - cc)
 
     val pcN: DenseVector[Double] = (1.0 - cc) * pc + hsig * sqrt(cc * (2.0 - cc) * mueff) * wY
 
@@ -94,14 +95,20 @@ class CMAES private[cmaes](iteration: Int,
       else weights(i) * dim / math.pow(norm(invSqrtC * pop.Y(::, i)), 2)
     }
 
-    val nC: DenseMatrix[Double] = (1 + c1 * hsig - c1 - cmu * sum(weights)) * C
-    +cmu * (0 until lambda).map { i =>
-      weightsRankMu(i) * pop.Y(::, i) * pop.Y(::, i).t
-    }.foldLeft(DenseMatrix.zeros[Double](dim, dim))(_ + _)
+    val rankOne = pcN * pcN.t
 
-    val EigSym(nDSqrt, nB) = eigSym(nC)
+    val rankMu = (0 until lambda).map { i => weightsRankMu(i) * pop.Y(::, i) * pop.Y(::, i).t }
+      .foldLeft(DenseMatrix.zeros[Double](dim, dim))(_ + _)
 
-    val nD = sqrt(nDSqrt)
+    val nC: DenseMatrix[Double] = (1 + c1 * deltaHsig - c1 - cmu * sum(weights)) * C +
+      c1 * rankOne +
+      cmu * rankMu
+
+    val nCSym = (nC + nC.t) / 2.0
+
+    val EigSym(nDSquare, nB) = eigSym(nCSym)
+
+    val nD = sqrt(nDSquare)
 
     new CMAES(
       iteration + 1,
@@ -123,6 +130,9 @@ object CMAES {
 
   def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double): CMAES =
     apply(lambda, initialM, initialSigma, CMAWeightNormal())
+
+//    def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double): CMAES =
+//      apply(lambda, initialM, initialSigma, CMAWeightActive())
 
   def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double, weightType: CMAWeightType): CMAES = {
     new CMAES(1, lambda, initialM.length,

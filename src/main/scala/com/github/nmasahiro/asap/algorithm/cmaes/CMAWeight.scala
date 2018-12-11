@@ -8,6 +8,11 @@ sealed trait CMAWeightType
 case class CMAWeightActive() extends CMAWeightType
 case class CMAWeightNormal() extends CMAWeightType
 
+/**
+  * The CMA Evolution Strategy: A Tutorial
+  * Nikolaus Hansen
+  * https://arxiv.org/abs/1604.00772 (2016)
+  */
 object CMAWeightActive {
 
   def getMueff(mu: Int, lambda: Int): Double = {
@@ -33,6 +38,12 @@ object CMAWeightActive {
   }
 }
 
+/**
+  * The CMA Evolution Strategy: A Comparing Review
+  * Nikolaus Hansen
+  * Towards a New Evolutionary Computation: Advances in the Estimation of Distribution Algorithms,
+  * pp.75-102 (2006)
+  */
 object CMAWeightNormal {
 
   def getMueff(mu: Int, lambda: Int): Double = {

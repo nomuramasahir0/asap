@@ -95,7 +95,7 @@ class DXNES private[dxnes](iteration: Int,
     val wzMatrix = pop.Z * diag(weights)
     val Gdelta = sum(wzMatrix(*, ::))
 
-    val GM = (0 until lambda).map { i => weights(i) * (pop.Z(::, i) * pop.Z(::, i).t) }
+    val GM = (0 until lambda).map { i => weights(i) * (pop.Z(::, i) * pop.Z(::, i).t - DenseMatrix.eye[Double](dim)) }
       .foldLeft(DenseMatrix.zeros[Double](dim, dim))(_ + _)
 
     val Gsigma = trace(GM) / dim.toDouble

@@ -5,6 +5,7 @@ import breeze.linalg.eigSym.EigSym
 import breeze.numerics.{exp, sqrt, tanh}
 import com.github.nmasahiro.asap.algorithm.{Population, Strategy}
 import breeze.stats.distributions
+import breeze.stats.distributions.RandBasis
 
 class FMNES private[fmnes](iteration: Int,
                            lambda: Int,
@@ -15,7 +16,7 @@ class FMNES private[fmnes](iteration: Int,
                            sigma: Double,
                            mean: DenseVector[Double],
                            gamma: Double,
-                           hInv: Double) extends Strategy {
+                           hInv: Double)(implicit randBasis: RandBasis) extends Strategy {
 
   override def getLambda: Int = lambda
 
@@ -118,7 +119,7 @@ class FMNES private[fmnes](iteration: Int,
     val wzMatrix = pop.Z * diag(weights)
     val Gdelta = sum(wzMatrix(*, ::))
 
-    val GM = (0 until lambda).map(i => (pop.Z(::, i) * pop.Z(::, i).t - DenseMatrix.eye[Double](dim)) *:* weights(i))
+    val GM = (0 until lambda).map { i => weights(i) * (pop.Z(::, i) * pop.Z(::, i).t - DenseMatrix.eye[Double](dim)) }
       .foldLeft(DenseMatrix.zeros[Double](dim, dim))(_ + _)
 
     val Gsigma = trace(GM) / dim.toDouble
@@ -136,9 +137,12 @@ class FMNES private[fmnes](iteration: Int,
     // eiadx-nes
     val nA = B * expm(getCMu(lambdaF) * GB) * B.t
     val A = B * B.t
-    val EigSym(dVec, uMat) = eigSym(A)
-    val tauVec = (0 until dim).map(i => (uMat(::, i).t * nA * uMat(::, i)) / (uMat(::, i).t * A * uMat(::, i)) - 1.0)
-    val tauFlag = (0 until dim).map(i => if (tauVec(i) > 0) 1.0 else 0.0)
+    val ASym = (A + A.t) / 2.0
+    val EigSym(_, uMat) = eigSym(ASym)
+    val tauVec = (0 until dim).map {
+      i => (uMat(::, i).t * nA * uMat(::, i)) / (uMat(::, i).t * ASym * uMat(::, i)) - 1.0
+    }
+    val tauFlag = (0 until dim).map { i => if (tauVec(i) > 0) 1.0 else 0.0 }
     val tau = max(tauVec)
     val gammaN = max((1 - cGamma) * gamma + cGamma * sqrt(1 + dGamma * tau), 1.0)
 
@@ -153,10 +157,10 @@ class FMNES private[fmnes](iteration: Int,
     val lc = if (norm(psN) >= 1.0 * chiN) 1.0 else 0.0
     val nnnA = nnA + lc * getC1(lambdaF) * (pcN * pcN.t - B * B.t)
     val stepsizeA = math.pow(det(nnnA), 1.0 / dim)
-    val nnnnAPre = nnnA / stepsizeA
-    val nnnnA = (nnnnAPre + nnnnAPre.t) / 2.0
-    val EigSym(dVecN, uMatN) = eigSym(nnnnA)
-    val nD = dVec.map(sqrt(_))
+    val nnnnA = nnnA / stepsizeA
+    val nnnnASym = (nnnnA + nnnnA.t) / 2.0
+    val EigSym(dVecN, uMatN) = eigSym(nnnnASym)
+    val nD = sqrt(dVecN)
     val nB = uMatN * diag(nD) * uMatN.t
 
     new FMNES(
@@ -166,7 +170,7 @@ class FMNES private[fmnes](iteration: Int,
       psN,
       pcN,
       nB,
-      sigmaN,
+      sigmaNN,
       meanN,
       gammaN,
       hInv
@@ -176,7 +180,7 @@ class FMNES private[fmnes](iteration: Int,
 
 object FMNES {
 
-  def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double): FMNES = {
+  def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double)(implicit randBasis: RandBasis): FMNES = {
     new FMNES(1, lambda, initialM.length,
       DenseVector.zeros[Double](initialM.length), // ps
       DenseVector.zeros[Double](initialM.length), // pc

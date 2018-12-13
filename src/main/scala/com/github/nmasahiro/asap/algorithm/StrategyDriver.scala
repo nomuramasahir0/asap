@@ -21,7 +21,7 @@ case class StrategyDriver(private val f: PartialFunction[DenseMatrix[Double], De
       val (sortedPop, sortedFvals) = strategy.sorted(pop, fvals)
 //      println(sortedFvals(0))
 
-      if (stopCondition(newEvalCnt, min(fvals))) {
+      if (stopCondition((newEvalCnt, min(fvals)))) {
         (newEvalCnt, sortedPop.X(*, 0).underlying)
       } else {
         optimize(strategy.update(sortedPop, sortedFvals), newEvalCnt)

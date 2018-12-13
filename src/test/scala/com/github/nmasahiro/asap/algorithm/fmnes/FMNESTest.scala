@@ -65,4 +65,32 @@ class FMNESTest extends FunSuite with Matchers {
 
   }
 
+  test("FM-NES with d=40 ConstraintSphere Function:") {
+
+    val driver = StrategyDriver(ParallelBenchmark.constraintSphere)
+
+    val seed = 10
+    implicit val randBasis: RandBasis = new RandBasis(new ThreadLocalRandomGenerator(new MersenneTwister(seed)))
+
+    val dim = 40
+    val lambda = 16
+    val initialM = 10.0 * DenseVector.ones[Double](dim)
+    val initialSigma = 2.0
+    val fmnes = FMNES(lambda, initialM, initialSigma)
+
+    val successFval = 1e-12
+    val finishEvalCnt = (5 * dim * 1e4).toInt
+
+    val (evalCnt, bestX) = driver.optimize(
+      fmnes,
+      fvalBestReached(successFval) orElse
+        evalCntReached(finishEvalCnt) orElse
+        proceed
+    )
+
+    println(s"evalCnt:$evalCnt, bestX:$bestX")
+    evalCnt shouldBe ((19.1 * 1e3).toInt +- (4 * 1e3.toInt))
+
+  }
+
 }

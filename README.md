@@ -1,53 +1,39 @@
-# Covariance Matrix Adaptation Evolution Strategy
+# asap
 
-This library is a minimalistic Scala version of the CMA-ES algorithm as described in 
-[this paper](http://arxiv.org/pdf/1604.00772v1.pdf). The implementation is not as full as Java version of the  
- algorithm however it provides certain benefits compared to the latter one:
+asap is scala evolutionary computation library for optimization.
 
-* This implementation is more compact and straightforward.
-* In Scala version objective function can be evaluated in parallel. This might help to reduce optimization time if it 
-takes long time to compute your fitness function.
-* The strategy implementation is stateless and idempotent.
+This repository contains implementations of the following algorithms.
 
-## Using CMA-ES
+* CMA-ES
+* DX-NES
+* FM-NES
 
-This project can be built with sbt 0.13. Add these lines to your SBT project definition:
 
-```scala
+[![CircleCI](https://circleci.com/gh/nmasahiro/asap/tree/master.svg?style=shield)](https://circleci.com/gh/nmasahiro/asap/tree/master)
 
-resolvers += Resolver.bintrayRepo("volodymyr-orlov", "maven")
 
-libraryDependencies ++= Seq(
-  "com.sungevity" %% "cma-es-scala" % "1.0.1"
-)
+## Getting Started
 
+### Installing
+
+Please run the following command.
+
+```bash
+$ pip install crfmnes
 ```
 
-Here is a minimal working example.:
- 
- ```scala
-  
-   import com.sungevity.cmaes._
-   import breeze.linalg._
- 
-   val rosenbrock = ParallelObjectiveFunction ({ // a non-convex function we want to optimize
-     case x: DenseVector[Double] => {
-           (for (i <- 0 until x.length - 1) yield {
-             100 * (x(i) * x(i) - x(i + 1)) * (x(i) * x(i) - x(i + 1)) +
-               (x(i) - 1.0) * (x(i) - 1.0);
-           }).sum
-     }
-   })
-   
-   val driver = CMAESDriver(rosenbrock) // instantiate a driver  
-   
-   val result = driver.optimize(5, // population size
-     5, // search space size
-     0.05, // initial value
-     0.2, // initial standard deviation
-     iterationsExceeded(6000) orElse lowVariance(1e-14) orElse minFitnessReached(1e-14) orElse proceed // stop condition
-     )
-   
-   ```
+## Using asap
 
-   
+### SBT
+
+This project can be build with SBT 0.13.x.
+
+
+## Versioning
+
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/nmasahiro/crfmnes/tags). 
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/nmasahiro/asap/blob/master/LICENSE) file for details

@@ -27,7 +27,7 @@ class FMNES private[fmnes](iteration: Int,
 
   private val mueff = 1 / sum(weightsRank.map(_ + 1.0 / lambda).map(math.pow(_, 2)))
 
-  private val csig = (mueff + 2.0) / (dim + mueff + 5.0) / sqrt(dim)
+  private val csig = (mueff + 2.0) / (dim + mueff + 5.0)
 
   private val cc = (4.0 + mueff / dim) / (dim + 4.0 + 2.0 * mueff / dim)
 
@@ -154,7 +154,7 @@ class FMNES private[fmnes](iteration: Int,
     val sigmaNN = stepsizeQ * sigmaN
     val nnA = Q * nA * Q / (stepsizeQ * stepsizeQ)
 
-    val lc = if (norm(psN) >= 1.0 * chiN) 1.0 else 0.0
+    val lc = if (norm(psN) >= chiN) 1.0 else 0.0
     val nnnA = nnA + lc * getC1(lambdaF) * (pcN * pcN.t - B * B.t)
     val stepsizeA = math.pow(det(nnnA), 1.0 / dim)
     val nnnnA = nnnA / stepsizeA

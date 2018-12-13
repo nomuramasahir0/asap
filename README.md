@@ -14,19 +14,14 @@ This repository contains implementations of the following algorithms.
 
 ## Getting Started
 
-### Installing
-
-Please run the following command.
-
-```bash
-$ pip install crfmnes
-```
-
-## Using asap
-
-### SBT
-
 This project can be build with SBT 0.13.x.
+
+```scala
+libraryDependencies ++= Seq(
+  "com.github.nmasahiro" %% "asap" % "0.0.0"
+)
+
+```
 
 
 ## Versioning

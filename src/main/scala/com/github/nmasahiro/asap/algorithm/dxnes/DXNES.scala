@@ -5,6 +5,7 @@ import breeze.linalg.eigSym.EigSym
 import breeze.numerics.{exp, log, sqrt}
 import com.github.nmasahiro.asap.algorithm.{Population, Strategy}
 import breeze.stats.distributions
+import breeze.stats.distributions.RandBasis
 
 class DXNES private[dxnes](iteration: Int,
                            lambda: Int,
@@ -12,7 +13,7 @@ class DXNES private[dxnes](iteration: Int,
                            ps: DenseVector[Double],
                            B: DenseMatrix[Double],
                            sigma: Double,
-                           mean: DenseVector[Double]) extends Strategy {
+                           mean: DenseVector[Double])(implicit randBasis: RandBasis) extends Strategy {
 
   override def getLambda: Int = lambda
 
@@ -27,8 +28,6 @@ class DXNES private[dxnes](iteration: Int,
 
   private val chiN = sqrt(dim) * (1.0 - 1.0 / (4.0 * dim) + 1.0 / (21.0 * dim * dim))
 
-  private val etaM = 1.0
-
   private val alpha = (0.9 + 0.15 * log(dim)) * min(1.0, lambda / dim.toDouble)
 
   private def wDistHat(z: DenseVector[Double]): Double = exp(alpha * norm(z))
@@ -41,7 +40,7 @@ class DXNES private[dxnes](iteration: Int,
 
   private def getEtaBMove = (lambda + 2.0 * dim) / (lambda + 2.0 * dim * dim + 100) * min(1.0, sqrt(lambda / dim.toDouble))
 
-  private def getEtaBStag = lambda / (lambda + 2.0 * dim * dim + 100)
+  private def getEtaBStag = lambda / (lambda + (2.0 * dim * dim) + 100)
 
   private def getEtaBConv = getEtaBStag
 
@@ -90,13 +89,13 @@ class DXNES private[dxnes](iteration: Int,
     else getEtaSigmaConv
 
     val etaB = if (norm(psN) >= chiN) getEtaBMove
-    else if (norm(psN) >= 0.1 * chiN) getEtaSigmaStag
+    else if (norm(psN) >= 0.1 * chiN) getEtaBStag
     else getEtaBConv
 
     val wzMatrix = pop.Z * diag(weights)
     val Gdelta = sum(wzMatrix(*, ::))
 
-    val GM = (0 until lambda).map(i => (pop.Z(::, i) * pop.Z(::, i).t - DenseMatrix.eye[Double](dim)) *:* weights(i))
+    val GM = (0 until lambda).map { i => weights(i) * (pop.Z(::, i) * pop.Z(::, i).t) }
       .foldLeft(DenseMatrix.zeros[Double](dim, dim))(_ + _)
 
     val Gsigma = trace(GM) / dim.toDouble
@@ -104,12 +103,12 @@ class DXNES private[dxnes](iteration: Int,
     val preGB = GM - Gsigma * DenseMatrix.eye[Double](dim)
     val GB = (preGB + preGB.t) / 2.0
 
-    val meanN: DenseVector[Double] = mean + etaM * sigma * B * Gdelta
+    val meanN: DenseVector[Double] = mean + (sigma * B * Gdelta)
 
     val sigmaN = sigma * exp(etaSigma * Gsigma / 2.0)
 
-    val EigSym(nDsqrt, nU) = eigSym(etaB * GB / 2.0)
-    val nB = B * (nU * diag(nDsqrt.map(exp(_))) * nU.t)
+    val EigSym(nDsquare, nU) = eigSym(etaB * GB / 2.0)
+    val nB = B * (nU * diag(nDsquare.map(exp(_))) * nU.t)
 
     new DXNES(
       iteration + 1,
@@ -125,7 +124,7 @@ class DXNES private[dxnes](iteration: Int,
 
 object DXNES {
 
-  def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double): DXNES = {
+  def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double)(implicit randBasis: RandBasis): DXNES = {
     new DXNES(1, lambda, initialM.length,
       DenseVector.zeros[Double](initialM.length),
       DenseMatrix.eye[Double](initialM.length),

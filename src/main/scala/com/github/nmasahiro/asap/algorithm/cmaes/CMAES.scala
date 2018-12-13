@@ -4,6 +4,7 @@ import breeze.linalg._
 import breeze.numerics.{pow, sqrt}
 import breeze.linalg.eigSym.EigSym
 import breeze.stats.distributions
+import breeze.stats.distributions.RandBasis
 import com.github.nmasahiro.asap.algorithm.{Population, Strategy}
 
 
@@ -17,7 +18,7 @@ class CMAES private[cmaes](iteration: Int,
                            D: DenseVector[Double],
                            sigma: Double,
                            mean: DenseVector[Double],
-                           weightType: CMAWeightType) extends Strategy {
+                           weightType: CMAWeightType)(implicit randBasis: RandBasis) extends Strategy {
 
   override def getLambda: Int = lambda
 
@@ -128,13 +129,11 @@ class CMAES private[cmaes](iteration: Int,
 
 object CMAES {
 
-  def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double): CMAES =
-    apply(lambda, initialM, initialSigma, CMAWeightNormal())
+  def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double)(implicit randBasis: RandBasis): CMAES =
+    apply(lambda, initialM, initialSigma, CMAWeightActive())(randBasis)
 
-//    def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double): CMAES =
-//      apply(lambda, initialM, initialSigma, CMAWeightActive())
-
-  def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double, weightType: CMAWeightType): CMAES = {
+  def apply(lambda: Int, initialM: DenseVector[Double], initialSigma: Double, weightType: CMAWeightType)
+           (implicit randBasis: RandBasis): CMAES = {
     new CMAES(1, lambda, initialM.length,
       DenseVector.zeros[Double](initialM.length),
       DenseVector.zeros[Double](initialM.length),

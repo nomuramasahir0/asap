@@ -146,6 +146,7 @@ class FMNES private[fmnes](iteration: Int,
     val tau = max(tauVec)
     val gammaN = max((1 - cGamma) * gamma + cGamma * sqrt(1 + dGamma * tau), 1.0)
 
+    // TODO: refactoring variable names
     val Q = (gammaN - 1) * (0 until dim)
       .map(i => tauFlag(i) * uMat(::, i) * uMat(::, i).t)
       .foldLeft(DenseMatrix.zeros[Double](dim, dim))(_ + _) +

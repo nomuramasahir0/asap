@@ -9,6 +9,9 @@ headerLicense := Some(HeaderLicense.MIT("2018", "Masahiro Nomura"))
 // compile settings
 scalaVersion := "2.12.7"
 
+// disable using the Scala version in output paths and artifacts
+crossPaths := false
+
 scalacOptions ++= Seq(
   "-deprecation",
   "-encoding", "UTF-8",

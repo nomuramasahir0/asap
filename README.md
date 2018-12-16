@@ -1,5 +1,5 @@
 # asap: The Scala Evolutionary Computation Library
-![Hots logo](https://github.com/CyberAgent/hots/raw/master/asap_logo.png)
+![asap logo](https://github.com/CyberAgent/hots/raw/master/asap_logo.png)
 
 
 asap is scala evolutionary computation library for optimization.

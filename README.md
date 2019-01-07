@@ -18,11 +18,52 @@ This repository contains implementations of the following algorithms.
 
 This project can be build with SBT 0.13.x.
 
-```scala
-libraryDependencies ++= Seq(
-  "com.github.nmasahiro" %% "asap" % "0.0.0"
+```sbtshell
+// https://mvnrepository.com/artifact/com.github.nmasahiro/asap
+libraryDependencies += "com.github.nmasahiro" % "asap" % "0.0.11"
 )
+```
 
+This is an example using CMA-ES.
+
+```scala
+import breeze.linalg.DenseVector
+import com.github.nmasahiro.asap.algorithm.StrategyDriver
+import com.github.nmasahiro.asap.algorithm.cmaes.{CMAES, CMAWeightActive}
+import com.github.nmasahiro.asap.util.ParallelObjectiveFunction
+import com.github.nmasahiro.asap.util._
+
+object SampleMain extends App {
+
+  val ktablet = ParallelObjectiveFunction ({
+    case x: DenseVector[Double] =>
+      val dim = x.length
+      (for (i <- 0 until dim) yield {
+        if (i < (dim / 4.0).toInt) x(i) * x(i) else math.pow(100 * x(i), 2.0)
+      }).sum
+  })
+
+  val driver = StrategyDriver(ktablet)
+
+  val dim = 40
+  val lambda = 8
+  val initialM = 3.0 * DenseVector.ones[Double](dim)
+  val initialSigma = 2.0
+  val cmaes = CMAES(lambda, initialM, initialSigma, CMAWeightActive())
+
+  val successFval = 1e-12
+  val finishEvalCnt = (5 * dim * 1e4).toInt
+
+  val (evalCnt, bestX) = driver.optimize(
+    cmaes,
+    fvalBestReached(successFval) orElse
+      evalCntReached(finishEvalCnt) orElse
+      proceed
+  )
+
+  println(s"evalCnt:$evalCnt, bestX:$bestX")
+
+}
 ```
 
 

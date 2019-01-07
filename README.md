@@ -21,7 +21,6 @@ This project can be build with SBT 0.13.x.
 ```sbtshell
 // https://mvnrepository.com/artifact/com.github.nmasahiro/asap
 libraryDependencies += "com.github.nmasahiro" % "asap" % "0.0.11"
-)
 ```
 
 This is an example using CMA-ES.

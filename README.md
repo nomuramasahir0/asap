@@ -27,10 +27,12 @@ This is an example using CMA-ES.
 
 ```scala
 import breeze.linalg.DenseVector
+import breeze.stats.distributions.{RandBasis, ThreadLocalRandomGenerator}
 import com.github.nmasahiro.asap.algorithm.StrategyDriver
-import com.github.nmasahiro.asap.algorithm.cmaes.{CMAES, CMAWeightActive}
+import com.github.nmasahiro.asap.algorithm.cmaes.{CMAES, CMAWeightNormal}
 import com.github.nmasahiro.asap.util.ParallelObjectiveFunction
 import com.github.nmasahiro.asap.util._
+import org.apache.commons.math3.random.MersenneTwister
 
 object SampleMain extends App {
 
@@ -44,11 +46,14 @@ object SampleMain extends App {
 
   val driver = StrategyDriver(ktablet)
 
+  val seed = 10
+  implicit val randBasis: RandBasis = new RandBasis(new ThreadLocalRandomGenerator(new MersenneTwister(seed)))
+
   val dim = 40
   val lambda = 8
   val initialM = 3.0 * DenseVector.ones[Double](dim)
   val initialSigma = 2.0
-  val cmaes = CMAES(lambda, initialM, initialSigma, CMAWeightActive())
+  val cmaes = CMAES(lambda, initialM, initialSigma, CMAWeightNormal())
 
   val successFval = 1e-12
   val finishEvalCnt = (5 * dim * 1e4).toInt
